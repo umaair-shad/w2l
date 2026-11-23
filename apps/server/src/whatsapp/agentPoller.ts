@@ -105,6 +105,7 @@ export async function pollWhatsAppUpdates() {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        signal: AbortSignal.timeout(25000),
       });
 
       if (res.status === 204) {
@@ -208,9 +209,13 @@ export async function pollWhatsAppUpdates() {
           await sendWhatsAppReply(senderId, outbound.reply.text);
         }
       }
-    } catch (err) {
-      console.error('⚠️ Error in WhatsApp long-poll loop:', err);
-      await new Promise((r) => setTimeout(r, 5000));
+    } catch (err: any) {
+      if (err?.cause?.code === 'UND_ERR_CONNECT_TIMEOUT' || err?.code === 'ETIMEDOUT' || err?.name === 'TimeoutError') {
+        console.log('🔄 WhatsApp Poller: Re-establishing updates stream...');
+      } else {
+        console.warn('⚠️ WhatsApp long-poll notice:', err.message || err);
+      }
+      await new Promise((r) => setTimeout(r, 2000));
     }
   }
 }

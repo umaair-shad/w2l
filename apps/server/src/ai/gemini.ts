@@ -79,7 +79,8 @@ No additional markdown or text outside the JSON.`;
       const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleanJson);
     } catch (err: any) {
-      console.warn('⚠️ Gemini API unavailable/timed out, using fast Deterministic NLP Engine:', err?.message || err);
+      const summary = err?.status === 503 ? '503 Service Unavailable (Model Busy)' : (err?.message?.substring(0, 90) || 'Timeout');
+      console.warn(`⚡ Gemini API transient notice (${summary}) — Instant Deterministic NLP Engine active.`);
     }
   }
 

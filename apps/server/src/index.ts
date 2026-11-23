@@ -1,3 +1,4 @@
+import dns from 'node:dns';
 import express from 'express';
 import cors from 'cors';
 import { config } from './config.js';
@@ -5,6 +6,9 @@ import { seedDatabase } from './db/seed.js';
 import { dashboardRouter } from './routes/dashboardRoutes.js';
 import { whatsappRouter } from './routes/whatsappRoutes.js';
 import { pollWhatsAppUpdates } from './whatsapp/agentPoller.js';
+
+// Resolve IPv4 first to prevent Windows ISP IPv6 connect timeouts on api.whatsapp.com
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 
