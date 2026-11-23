@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { KpiCards } from './components/KpiCards';
-import { RevenueChart } from './components/RevenueChart';
-import { ExpenseBreakdown } from './components/ExpenseBreakdown';
-import { InvoicesTable } from './components/InvoicesTable';
-import { RecentExpenses } from './components/RecentExpenses';
+import { BusinessFinanceView } from './views/BusinessFinanceView';
+import { DashboardOverviewView } from './views/DashboardOverviewView';
+import { TransactionsView } from './views/TransactionsView';
+import { InvoicesView } from './views/InvoicesView';
+import { WalletKhataView } from './views/WalletKhataView';
+import { ReportsView } from './views/ReportsView';
+import { SettingsView } from './views/SettingsView';
 import { WhatsAppAgentModal } from './components/WhatsAppAgentModal';
 import { NewPaymentModal } from './components/NewPaymentModal';
-import type { DashboardKpis } from '@w2l/shared';
+import type { DashboardKpis, ExpenseCategoryBreakdown } from '@w2l/shared';
 
-// Initial state strictly matching the user's reference image
 const initialKpis: DashboardKpis = {
   total_revenue: { value: 12450, currency: 'USD', change_percentage: 8, trend: 'up' },
   total_expenses: { value: 7820, currency: 'USD', change_percentage: -3, trend: 'down' },
@@ -32,7 +33,7 @@ const initialMonths = [
   { month: 'Nov', revenue: 11500, expenses: 7100 },
 ];
 
-const initialCategories = [
+const initialCategories: ExpenseCategoryBreakdown[] = [
   { category: 'Software', amount: 2100, percentage: 27, color: '#10B981' },
   { category: 'Marketing', amount: 1500, percentage: 19, color: '#38BDF8' },
   { category: 'Contractors', amount: 3200, percentage: 41, color: '#3B82F6' },
@@ -73,9 +74,23 @@ const initialInvoices = [
 
 export const App: React.FC = () => {
   const [activeNav, setActiveNav] = useState('business');
-  const [subTab, setSubTab] = useState<'Overview' | 'Invoices' | 'Expenses' | 'Tax'>('Overview');
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Dark mode state with localStorage persistence
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem('w2l_theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('w2l_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('w2l_theme', 'light');
+    }
+  }, [darkMode]);
 
   const [kpis, setKpis] = useState<DashboardKpis>(initialKpis);
   const [chartData, setChartData] = useState(initialMonths);
@@ -96,7 +111,7 @@ export const App: React.FC = () => {
       if (Array.isArray(catRes) && catRes.length > 0) setCategories(catRes);
       if (Array.isArray(invRes) && invRes.length > 0) setInvoices(invRes);
     } catch (e) {
-      // Keeps initial high-fidelity mock data if offline
+      // Fallback
     }
   };
 
@@ -105,64 +120,51 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex">
+    <div className="min-h-screen bg-[#F8F9FA] dark:bg-dark-bg text-slate-800 dark:text-slate-100 flex transition-colors">
       {/* 1. Left Sidebar Navigation */}
-      <Sidebar activeTab={activeNav} setActiveTab={setActiveNav} />
+      <Sidebar
+        activeTab={activeNav}
+        setActiveTab={setActiveNav}
+        onOpenAgentModal={() => setIsAgentModalOpen(true)}
+      />
 
       {/* 2. Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
         <Header
+          activeTab={activeNav}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
           onOpenAgentModal={() => setIsAgentModalOpen(true)}
           onOpenNewPaymentModal={() => setIsPaymentModalOpen(true)}
         />
 
-        {/* Dashboard Body Container */}
-        <main className="flex-1 px-8 py-6 space-y-6 overflow-y-auto">
-          {/* Top 4 KPI Metric Cards */}
-          <KpiCards kpis={kpis} />
+        <main className="flex-1 px-8 py-6 overflow-y-auto">
+          {activeNav === 'business' && (
+            <BusinessFinanceView
+              kpis={kpis}
+              chartData={chartData}
+              categories={categories}
+              invoices={invoices}
+            />
+          )}
 
-          {/* Sub Navigation Tabs (Overview, Invoices, Expenses, Tax) */}
-          <div className="flex items-center gap-2 pt-1 pb-2">
-            {(['Overview', 'Invoices', 'Expenses', 'Tax'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setSubTab(tab)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  subTab === tab
-                    ? 'bg-emerald-400 text-slate-900 shadow-2xs font-extrabold'
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/50'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+          {activeNav === 'dashboard' && <DashboardOverviewView />}
 
-          {/* Two-Column Layout matching reference image */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Main Column (7 cols on lg screens) */}
-            <div className="lg:col-span-7 space-y-6">
-              {/* Monthly Revenue vs Expenses Bar Chart */}
-              <RevenueChart data={chartData} />
+          {activeNav === 'transactions' && <TransactionsView />}
 
-              {/* Invoices Table */}
-              <InvoicesTable invoices={invoices} />
-            </div>
+          {activeNav === 'invoices' && <InvoicesView invoices={invoices} />}
 
-            {/* Right Column (5 cols on lg screens) */}
-            <div className="lg:col-span-5 space-y-6">
-              {/* Expense Breakdown Categories */}
-              <ExpenseBreakdown categories={categories} />
+          {activeNav === 'wallet' && <WalletKhataView />}
 
-              {/* Recent Expenses Feed */}
-              <RecentExpenses />
-            </div>
-          </div>
+          {activeNav === 'reports' && <ReportsView />}
+
+          {(activeNav === 'settings' || activeNav === 'help') && (
+            <SettingsView darkMode={darkMode} setDarkMode={setDarkMode} />
+          )}
         </main>
       </div>
 
-      {/* WhatsApp Agent Interactive Modal */}
+      {/* WhatsApp Agent Interactive Live Modal */}
       <WhatsAppAgentModal
         isOpen={isAgentModalOpen}
         onClose={() => setIsAgentModalOpen(false)}
