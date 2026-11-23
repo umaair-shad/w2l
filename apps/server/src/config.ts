@@ -5,8 +5,26 @@ import { fileURLToPath } from 'url';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Locate root data directory reliably
 const rootDir = path.resolve(process.cwd(), process.cwd().endsWith('server') ? '../../' : '.');
+
+// Robustly load .env from root or apps/server
+const candidateEnvPaths = [
+  path.resolve(rootDir, '.env'),
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'apps', 'server', '.env'),
+  path.resolve(__dirname, '..', '.env'),
+  path.resolve(__dirname, '..', '..', '.env'),
+];
+
+for (const envPath of candidateEnvPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+}
 const dataDir = path.resolve(rootDir, 'data');
 const uploadsDir = path.resolve(dataDir, 'uploads');
 const receiptsDir = path.resolve(uploadsDir, 'receipts');

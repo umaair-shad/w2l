@@ -12,8 +12,19 @@ interface SessionRow {
   expires_at: string;
 }
 
+function getCurrencySymbol(): string {
+  try {
+    const db = getDb();
+    const row = db.prepare('SELECT currency_symbol FROM user_profile LIMIT 1').get() as { currency_symbol: string } | undefined;
+    return row?.currency_symbol || 'Rs.';
+  } catch {
+    return 'Rs.';
+  }
+}
+
 export async function handleWhatsAppMessage(inbound: WhatsAppAgentInbound): Promise<WhatsAppAgentOutbound> {
   const db = getDb();
+  const curr = getCurrencySymbol();
   const userId = inbound.sender.user_identifier || inbound.sender.user_id || 'default_user';
   const text = inbound.content.text || '';
   const now = new Date();
@@ -41,7 +52,7 @@ export async function handleWhatsAppMessage(inbound: WhatsAppAgentInbound): Prom
         payment_method: payload.payment_method || 'CASH',
         party_id: selectedParty.id,
         party_name: selectedParty.name + (selectedParty.tag ? ` (${selectedParty.tag})` : ''),
-        description: `${payload.type}: ${payload.amount} with ${selectedParty.name} (${selectedParty.tag})`,
+        description: `${payload.type}: ${curr} ${payload.amount} with ${selectedParty.name} (${selectedParty.tag})`,
         source_channel: 'WHATSAPP_TEXT',
         raw_input: text,
       });
@@ -52,7 +63,7 @@ export async function handleWhatsAppMessage(inbound: WhatsAppAgentInbound): Prom
       return {
         status: 'success',
         reply: {
-          text: `✅ *Entry Confirmed*\n\n• Party: *${selectedParty.name} (${selectedParty.tag})*\n• Amount: *$${payload.amount.toLocaleString()}*\n• Category: *${payload.category}*\n• Type: *${payload.type}*\n\nTransaction #${tx.txId.substring(0, 8)} recorded successfully in your Ledger.`,
+          text: `✅ *Entry Confirmed*\n\n• Party: *${selectedParty.name} (${selectedParty.tag})*\n• Amount: *${curr} ${payload.amount.toLocaleString()}*\n• Category: *${payload.category}*\n• Type: *${payload.type}*\n\nTransaction #${tx.txId.substring(0, 8)} recorded successfully in your Ledger.`,
           requires_action: false,
         },
         recorded_transaction: tx,
@@ -106,13 +117,13 @@ export async function handleWhatsAppMessage(inbound: WhatsAppAgentInbound): Prom
         return {
           status: 'success',
           reply: {
-            text: `📊 *Ledger Statement for ${p.name} ${p.tag ? '(' + p.tag + ')' : ''}*\n\n• Current Balance: *$${Math.abs(p.current_balance).toLocaleString()}*\n• Status: *${statusText}*\n• Phone: ${p.phone || 'N/A'}`,
+            text: `📊 *Ledger Statement for ${p.name} ${p.tag ? '(' + p.tag + ')' : ''}*\n\n• Current Balance: *${curr} ${Math.abs(p.current_balance).toLocaleString()}*\n• Status: *${statusText}*\n• Phone: ${p.phone || 'N/A'}`,
             requires_action: false,
           },
         };
       }
       // If multiple parties match question
-      const list = parties.map((p, i) => `${i + 1}️⃣ *${p.name}* (${p.tag}) - Bal: $${p.current_balance}`).join('\n');
+      const list = parties.map((p, i) => `${i + 1}️⃣ *${p.name}* (${p.tag}) - Bal: ${curr} ${p.current_balance.toLocaleString()}`).join('\n');
       return {
         status: 'success',
         reply: {
@@ -127,7 +138,7 @@ export async function handleWhatsAppMessage(inbound: WhatsAppAgentInbound): Prom
     return {
       status: 'success',
       reply: {
-        text: `📊 *Business Finance Summary*\n\n• 💰 *Total Revenue:* $${kpis.total_revenue.value.toLocaleString()}\n• 📉 *Total Expenses:* $${kpis.total_expenses.value.toLocaleString()}\n• 🟢 *Net Profit:* $${kpis.net_profit.value.toLocaleString()}\n• ⏳ *Pending Invoices:* ${kpis.pending_invoices.count} ($${kpis.pending_invoices.total_value.toLocaleString()})`,
+        text: `📊 *Business Finance Summary*\n\n• 💰 *Total Revenue:* ${curr} ${kpis.total_revenue.value.toLocaleString()}\n• 📉 *Total Expenses:* ${curr} ${kpis.total_expenses.value.toLocaleString()}\n• 🟢 *Net Profit:* ${curr} ${kpis.net_profit.value.toLocaleString()}\n• ⏳ *Pending Invoices:* ${kpis.pending_invoices.count} (${curr} ${kpis.pending_invoices.total_value.toLocaleString()})`,
         requires_action: false,
       },
     };
@@ -175,7 +186,7 @@ export async function handleWhatsAppMessage(inbound: WhatsAppAgentInbound): Prom
         );
 
         const optionsText = matches
-          .map((m, idx) => `${idx + 1}️⃣ *${m.name}* (${m.tag || 'General'}) — Current Bal: $${m.current_balance}`)
+          .map((m, idx) => `${idx + 1}️⃣ *${m.name}* (${m.tag || 'General'}) — Current Bal: ${curr} ${m.current_balance.toLocaleString()}`)
           .join('\n');
 
         return {
@@ -204,7 +215,7 @@ export async function handleWhatsAppMessage(inbound: WhatsAppAgentInbound): Prom
       payment_method: extracted.payment_method || 'CASH',
       party_id: targetPartyId,
       party_name: targetPartyName,
-      description: `${extracted.type}: $${extracted.amount} (${extracted.category})${targetPartyName ? ' - ' + targetPartyName : ''}`,
+      description: `${extracted.type}: ${curr} ${extracted.amount} (${extracted.category})${targetPartyName ? ' - ' + targetPartyName : ''}`,
       source_channel: inbound.type === 'audio' ? 'WHATSAPP_VOICE' : inbound.type === 'image' ? 'WHATSAPP_IMAGE' : 'WHATSAPP_TEXT',
       raw_input: text,
     });
@@ -214,7 +225,7 @@ export async function handleWhatsAppMessage(inbound: WhatsAppAgentInbound): Prom
     return {
       status: 'success',
       reply: {
-        text: `✅ *Entry Recorded in Ledger*\n\n${typeEmoji} *Type:* ${extracted.type}\n• *Amount:* $${extracted.amount.toLocaleString()}\n• *Category:* ${extracted.category}\n• *Payment:* ${extracted.payment_method}\n${targetPartyName ? `• *Party:* ${targetPartyName}\n` : ''}• *Tx ID:* #${tx.txId.substring(0, 8)}\n\nYour live dashboard has been updated.`,
+        text: `✅ *Entry Recorded in Ledger*\n\n${typeEmoji} *Type:* ${extracted.type}\n• *Amount:* *${curr} ${extracted.amount.toLocaleString()}*\n• *Category:* ${extracted.category}\n• *Payment:* ${extracted.payment_method}\n${targetPartyName ? `• *Party:* ${targetPartyName}\n` : ''}• *Tx ID:* #${tx.txId.substring(0, 8)}\n\nYour live dashboard has been updated.`,
         requires_action: false,
       },
       recorded_transaction: tx,

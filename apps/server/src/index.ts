@@ -4,6 +4,7 @@ import { config } from './config.js';
 import { seedDatabase } from './db/seed.js';
 import { dashboardRouter } from './routes/dashboardRoutes.js';
 import { whatsappRouter } from './routes/whatsappRoutes.js';
+import { pollWhatsAppUpdates } from './whatsapp/agentPoller.js';
 
 const app = express();
 
@@ -31,4 +32,9 @@ app.get('/api/health', (req, res) => {
 app.listen(config.port, () => {
   console.log(`🚀 W2L Server listening on http://localhost:${config.port}`);
   console.log(`📡 WhatsApp Agent Webhook active at http://localhost:${config.port}/api/whatsapp/webhook`);
+
+  // Start Long-Polling WhatsApp Agent Platform updates
+  pollWhatsAppUpdates().catch((err) => {
+    console.error('❌ Error initializing WhatsApp Agent Poller:', err);
+  });
 });
