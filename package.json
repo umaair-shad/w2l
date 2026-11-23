@@ -10,6 +10,7 @@
     "dev:web": "npm run dev --workspace=@w2l/web",
     "dev:server": "npm run dev --workspace=@w2l/server",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
+    "test:agent": "npm run test:agent --workspace=@w2l/server",
     "build": "npm run build --workspaces"
   },
   "devDependencies": {

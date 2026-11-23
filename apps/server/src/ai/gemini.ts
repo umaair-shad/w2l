@@ -21,7 +21,7 @@ export async function parseWithGemini(
   if (config.geminiApiKey) {
     try {
       const genAI = new GoogleGenerativeAI(config.geminiApiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
 
       const systemPrompt = `
 You are W2L (WhatsApp to Ledger), an expert financial bookkeeping agent for small businesses and shops.
@@ -69,12 +69,17 @@ No additional markdown or text outside the JSON.`;
         contents.push({ text: 'Listen to this voice message and extract transaction or question.' });
       }
 
-      const result = await model.generateContent(contents);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini API timeout (3s limit reached)')), 3000)
+      );
+
+      const generatePromise = model.generateContent(contents);
+      const result: any = await Promise.race([generatePromise, timeoutPromise]);
       const responseText = result.response.text().trim();
       const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleanJson);
-    } catch (err) {
-      console.warn('⚠️ Gemini API error, falling back to deterministic NLP engine:', err);
+    } catch (err: any) {
+      console.warn('⚠️ Gemini API unavailable/timed out, using fast Deterministic NLP Engine:', err?.message || err);
     }
   }
 

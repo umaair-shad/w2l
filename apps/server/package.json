@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "test:agent": "tsx src/test-agent.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {

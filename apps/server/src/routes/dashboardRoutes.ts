@@ -1,5 +1,8 @@
 import { Router } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { getDb } from '../db/connection.js';
+import { config } from '../config.js';
 import {
   getDashboardKpis,
   getRevenueOverview,
@@ -34,7 +37,7 @@ dashboardRouter.get('/profile', (req, res) => {
   }
 });
 
-// 2. Update User Profile & Currency (e.g. Switch to PKR, USD, EUR, etc.)
+// 2. Update User Profile & Currency
 dashboardRouter.put('/profile', (req, res) => {
   try {
     const db = getDb();
@@ -72,7 +75,39 @@ dashboardRouter.put('/profile', (req, res) => {
   }
 });
 
-// 3. Get KPI Cards
+// 3. Save API Keys (Gemini & WhatsApp Agent) directly to .env and memory
+dashboardRouter.post('/keys', (req, res) => {
+  try {
+    const { geminiApiKey, whatsappAgentApiKey } = req.body;
+
+    if (geminiApiKey !== undefined) config.geminiApiKey = geminiApiKey.trim();
+    if (whatsappAgentApiKey !== undefined) config.whatsappAgentApiKey = whatsappAgentApiKey.trim();
+
+    // Persist to apps/server/.env
+    const envPath = path.resolve(process.cwd(), process.cwd().endsWith('server') ? '.env' : 'apps/server/.env');
+    const envContent = `PORT=${config.port}\nGEMINI_API_KEY=${config.geminiApiKey}\nWHATSAPP_AGENT_API_KEY=${config.whatsappAgentApiKey}\n`;
+    fs.writeFileSync(envPath, envContent, 'utf-8');
+
+    res.json({
+      success: true,
+      message: 'API Keys updated in memory and saved to .env',
+      hasGeminiKey: Boolean(config.geminiApiKey),
+      hasWhatsAppKey: Boolean(config.whatsappAgentApiKey),
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. Test API Key Status
+dashboardRouter.get('/keys/status', (req, res) => {
+  res.json({
+    geminiConfigured: Boolean(config.geminiApiKey && config.geminiApiKey.length > 5),
+    whatsappConfigured: Boolean(config.whatsappAgentApiKey && config.whatsappAgentApiKey.length > 5),
+  });
+});
+
+// 5. Get KPI Cards
 dashboardRouter.get('/kpis', (req, res) => {
   try {
     const kpis = getDashboardKpis();
@@ -82,7 +117,7 @@ dashboardRouter.get('/kpis', (req, res) => {
   }
 });
 
-// 4. Get Revenue Overview Chart
+// 6. Get Revenue Overview Chart
 dashboardRouter.get('/revenue-overview', (req, res) => {
   try {
     const overview = getRevenueOverview();
@@ -92,7 +127,7 @@ dashboardRouter.get('/revenue-overview', (req, res) => {
   }
 });
 
-// 5. Get Expense Category Breakdown
+// 7. Get Expense Category Breakdown
 dashboardRouter.get('/expense-breakdown', (req, res) => {
   try {
     const breakdown = getExpenseBreakdown();
@@ -102,7 +137,7 @@ dashboardRouter.get('/expense-breakdown', (req, res) => {
   }
 });
 
-// 6. Get Invoices
+// 8. Get Invoices
 dashboardRouter.get('/invoices', (req, res) => {
   try {
     const invoices = getRecentInvoices();
@@ -112,7 +147,7 @@ dashboardRouter.get('/invoices', (req, res) => {
   }
 });
 
-// 7. Get Recent Transactions
+// 9. Get Recent Transactions
 dashboardRouter.get('/transactions', (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string, 10) || 10;
@@ -123,7 +158,7 @@ dashboardRouter.get('/transactions', (req, res) => {
   }
 });
 
-// 8. Manual New Transaction from Dashboard
+// 10. Manual New Transaction
 dashboardRouter.post('/transactions', (req, res) => {
   try {
     const { type, amount, category, payment_method, party_id, description } = req.body;
@@ -142,7 +177,7 @@ dashboardRouter.post('/transactions', (req, res) => {
   }
 });
 
-// 9. Search Parties
+// 11. Search Parties
 dashboardRouter.get('/parties', (req, res) => {
   try {
     const q = (req.query.q as string) || '';
