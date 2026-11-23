@@ -10,13 +10,14 @@ import { ReportsView } from './views/ReportsView';
 import { SettingsView } from './views/SettingsView';
 import { WhatsAppAgentModal } from './components/WhatsAppAgentModal';
 import { NewPaymentModal } from './components/NewPaymentModal';
+import { CurrencyProvider } from './context/CurrencyContext';
 import type { DashboardKpis, ExpenseCategoryBreakdown } from '@w2l/shared';
 
 const initialKpis: DashboardKpis = {
-  total_revenue: { value: 12450, currency: 'USD', change_percentage: 8, trend: 'up' },
-  total_expenses: { value: 7820, currency: 'USD', change_percentage: -3, trend: 'down' },
-  net_profit: { value: 4630, currency: 'USD', change_percentage: 15, trend: 'up' },
-  pending_invoices: { count: 3, total_value: 6900, currency: 'USD' },
+  total_revenue: { value: 12450, currency: 'PKR', change_percentage: 8, trend: 'up' },
+  total_expenses: { value: 7820, currency: 'PKR', change_percentage: -3, trend: 'down' },
+  net_profit: { value: 4630, currency: 'PKR', change_percentage: 15, trend: 'up' },
+  pending_invoices: { count: 3, total_value: 6900, currency: 'PKR' },
 };
 
 const initialMonths = [
@@ -72,7 +73,7 @@ const initialInvoices = [
   },
 ];
 
-export const App: React.FC = () => {
+const MainDashboardApp: React.FC = () => {
   const [activeNav, setActiveNav] = useState('business');
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -136,6 +137,7 @@ export const App: React.FC = () => {
           setDarkMode={setDarkMode}
           onOpenAgentModal={() => setIsAgentModalOpen(true)}
           onOpenNewPaymentModal={() => setIsPaymentModalOpen(true)}
+          onNavigateToSettings={() => setActiveNav('settings')}
         />
 
         <main className="flex-1 px-8 py-6 overflow-y-auto">
@@ -178,6 +180,14 @@ export const App: React.FC = () => {
         onPaymentCreated={fetchDashboardData}
       />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <CurrencyProvider>
+      <MainDashboardApp />
+    </CurrencyProvider>
   );
 };
 

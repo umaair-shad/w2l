@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Phone, UserCheck, ArrowUpRight, ArrowDownLeft, ShieldCheck } from 'lucide-react';
+import { Search, Phone, ShieldCheck } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 export const WalletKhataView: React.FC = () => {
   const [parties, setParties] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const { formatAmount } = useCurrency();
 
   useEffect(() => {
     fetch('/api/dashboard/parties')
@@ -115,7 +117,7 @@ export const WalletKhataView: React.FC = () => {
                     isReceivable ? 'text-slate-900 dark:text-white' : 'text-rose-500'
                   }`}
                 >
-                  ${Math.abs(party.current_balance).toLocaleString()}
+                  {formatAmount(Math.abs(party.current_balance))}
                 </span>
               </div>
             </div>

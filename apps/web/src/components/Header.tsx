@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search, Bell, Sparkles, Plus, Moon, Sun, ChevronDown } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface HeaderProps {
   onOpenAgentModal: () => void;
@@ -7,6 +8,7 @@ interface HeaderProps {
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
   activeTab: string;
+  onNavigateToSettings: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -15,7 +17,10 @@ export const Header: React.FC<HeaderProps> = ({
   darkMode,
   setDarkMode,
   activeTab,
+  onNavigateToSettings,
 }) => {
+  const { profile, currency, currencySymbol } = useCurrency();
+
   const titles: Record<string, { title: string; subtitle: string }> = {
     business: { title: 'Business Finance', subtitle: 'Manage your invoices, expenses, and taxes' },
     dashboard: { title: 'Dashboard Overview', subtitle: 'Real-time operational liquidity and performance' },
@@ -23,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
     wallet: { title: 'My Wallet & Khata', subtitle: 'Receivables and supplier payables' },
     invoices: { title: 'Invoices & Billing', subtitle: 'Client invoices and due payment tracking' },
     reports: { title: 'Financial Reports', subtitle: 'Auditable balance sheets, P&L, and tax statements' },
-    settings: { title: 'System Settings', subtitle: 'API keys, WhatsApp bridge, and preferences' },
+    settings: { title: 'System Settings', subtitle: 'Currency units, merchant profile, and WhatsApp bridge' },
     help: { title: 'Help Center', subtitle: 'Documentation, guides, and WhatsApp agent setup' },
   };
 
@@ -31,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-white dark:bg-dark-surface border-b border-slate-200 dark:border-dark-border px-8 py-4 transition-colors">
-      {/* Top Search, Theme & Profile Row */}
+      {/* Top Search, Currency Badge, Theme & Profile Row */}
       <div className="flex items-center justify-between gap-4 mb-6">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -47,6 +52,17 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Active Currency Indicator Button (Click to change) */}
+          <button
+            onClick={onNavigateToSettings}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-dark-card border border-slate-200/80 dark:border-dark-border text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-emerald-500 transition-all"
+            title="Current Accounting Unit. Click to change."
+          >
+            <span className="text-[10px] text-slate-400">Unit:</span>
+            <span className="text-emerald-600 dark:text-emerald-400">{currency}</span>
+            <span className="text-[10px] text-slate-500">({currencySymbol})</span>
+          </button>
+
           {/* Theme Toggle (Light / Dark Mode) */}
           <button
             onClick={() => setDarkMode(!darkMode)}
@@ -71,19 +87,26 @@ export const Header: React.FC<HeaderProps> = ({
             <Bell className="w-4 h-4" />
           </button>
 
-          {/* Profile User matching Image 0 & 2 */}
-          <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-dark-border">
+          {/* User Profile matching Image 0 & 2 */}
+          <button
+            onClick={onNavigateToSettings}
+            className="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-dark-border hover:opacity-85 transition-opacity text-left"
+          >
             <img
               src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces"
-              alt="Esther Howard"
+              alt={profile.name}
               className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/20"
             />
             <div className="text-left hidden sm:block">
-              <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">Esther Howard</span>
-              <span className="text-[10px] text-slate-400 font-medium block">Admin</span>
+              <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">
+                {profile.name || 'Esther Howard'}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium block">
+                {profile.business_name || 'Admin'}
+              </span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
-          </div>
+          </button>
         </div>
       </div>
 

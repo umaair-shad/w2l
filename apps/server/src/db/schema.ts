@@ -3,15 +3,27 @@ import { getDb } from './connection.js';
 export function initializeDatabase() {
   const db = getDb();
 
-  // Create core schema
   db.exec(`
+    -- User Profile & Currency Settings
+    CREATE TABLE IF NOT EXISTS user_profile (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      business_name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      currency TEXT DEFAULT 'PKR',
+      currency_symbol TEXT DEFAULT 'Rs',
+      theme TEXT DEFAULT 'light',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Chart of Accounts
     CREATE TABLE IF NOT EXISTS accounts (
       id TEXT PRIMARY KEY,
       code TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL,
       type TEXT CHECK(type IN ('ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE')) NOT NULL,
-      currency TEXT DEFAULT 'USD',
+      currency TEXT DEFAULT 'PKR',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -90,5 +102,5 @@ export function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_sessions_user ON agent_sessions(user_identifier);
   `);
 
-  console.log('✅ SQLite Database & Ledger Schema Initialized Successfully');
+  console.log('✅ SQLite Database & Ledger Schema Initialized with User Profile & Default PKR Currency');
 }

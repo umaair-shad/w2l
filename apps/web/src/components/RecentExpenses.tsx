@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, Megaphone, BookOpen, Laptop } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface ExpenseItem {
   id: string;
@@ -11,6 +12,8 @@ interface ExpenseItem {
 }
 
 export const RecentExpenses: React.FC = () => {
+  const { formatAmount } = useCurrency();
+
   const items: ExpenseItem[] = [
     {
       id: '1',
@@ -47,12 +50,12 @@ export const RecentExpenses: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-2xs">
+    <div className="bg-white dark:bg-dark-card rounded-2xl p-6 border border-slate-200/90 dark:border-dark-border shadow-2xs">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-base font-bold text-slate-900">Recent Expenses</h2>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Recent Expenses</h2>
         </div>
-        <button className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors">
+        <button className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors">
           View All
         </button>
       </div>
@@ -62,16 +65,16 @@ export const RecentExpenses: React.FC = () => {
           return (
             <div key={item.id} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-dark-surface flex items-center justify-center text-slate-600 dark:text-slate-300">
                   {item.iconType === 'dev' && <Laptop className="w-4 h-4 text-emerald-600" />}
                   {item.iconType === 'ad' && <Megaphone className="w-4 h-4 text-sky-600" />}
                   {item.iconType === 'office' && <BookOpen className="w-4 h-4 text-indigo-600" />}
                   {item.iconType === 'user' && <User className="w-4 h-4 text-slate-600" />}
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-slate-900 block leading-tight">{item.title}</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block leading-tight">{item.title}</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[10px] text-slate-500 font-semibold bg-slate-100 px-1.5 py-0.2 rounded">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold bg-slate-100 dark:bg-dark-surface px-1.5 py-0.2 rounded">
                       {item.category}
                     </span>
                     <span className="text-[10px] text-slate-400 font-medium">{item.date}</span>
@@ -79,7 +82,9 @@ export const RecentExpenses: React.FC = () => {
                 </div>
               </div>
 
-              <span className="text-sm font-bold text-slate-900">${item.amount.toLocaleString()}</span>
+              <span className="text-sm font-bold text-slate-900 dark:text-white">
+                {formatAmount(item.amount)}
+              </span>
             </div>
           );
         })}

@@ -11,9 +11,11 @@ import {
   AreaChart,
   Area,
 } from 'recharts';
+import { useCurrency } from '../context/CurrencyContext';
 
 export const DashboardOverviewView: React.FC = () => {
   const [timeframe, setTimeframe] = useState<'Monthly' | 'Weekly' | 'Daily'>('Monthly');
+  const { currencySymbol, profile } = useCurrency();
 
   // Cash Flow Insights dual-direction dataset matching Image 1
   const cashFlowData = [
@@ -45,7 +47,7 @@ export const DashboardOverviewView: React.FC = () => {
       {/* Welcome Banner matching Image 1 */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Good Morning, Alex!
+          Good Morning, {profile.name.split(' ')[0]}!
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
           Take a look at a glance of all your business how going
@@ -67,7 +69,7 @@ export const DashboardOverviewView: React.FC = () => {
             </div>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                $45,672K
+                {currencySymbol} 45,672K
               </span>
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
@@ -87,7 +89,7 @@ export const DashboardOverviewView: React.FC = () => {
             </div>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                $28,903K
+                {currencySymbol} 28,903K
               </span>
               <span className="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-950/40 dark:text-rose-400 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <TrendingDown className="w-3 h-3" />
@@ -107,7 +109,7 @@ export const DashboardOverviewView: React.FC = () => {
             </div>
             <div className="flex items-baseline justify-between mt-2">
               <span className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                $34,215K
+                {currencySymbol} 34,215K
               </span>
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
@@ -135,16 +137,16 @@ export const DashboardOverviewView: React.FC = () => {
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={cashFlowData} stackOffset="sign" barGap={0} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.4} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.3} />
                 <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#94A3B8', fontSize: 11 }}
-                  tickFormatter={(val) => `$${val}`}
+                  tickFormatter={(val) => `${currencySymbol}${val}`}
                 />
                 <Tooltip
-                  formatter={(val: number) => [`$${Math.abs(val)}`, val > 0 ? 'Inflow' : 'Outflow']}
+                  formatter={(val: number) => [`${currencySymbol} ${Math.abs(val)}`, val > 0 ? 'Inflow' : 'Outflow']}
                   contentStyle={{ backgroundColor: '#1E293B', borderRadius: '8px', border: 'none', color: '#fff', fontSize: '12px' }}
                 />
                 <Bar dataKey="positive" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={22} />
@@ -163,7 +165,6 @@ export const DashboardOverviewView: React.FC = () => {
             <p className="text-xs text-slate-400">Comparative multi-period margin ratios</p>
           </div>
 
-          {/* Timeframe switchers */}
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-dark-surface p-1 rounded-xl">
             {(['Monthly', 'Weekly', 'Daily'] as const).map((t) => (
               <button

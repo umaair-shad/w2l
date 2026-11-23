@@ -6,16 +6,33 @@ export function seedDatabase() {
   initializeDatabase();
   const db = getDb();
 
-  // Check if already seeded
+  // 1. Seed or update User Profile with default PKR
+  const existingProfile = db.prepare('SELECT count(*) as count FROM user_profile').get() as { count: number };
+  if (existingProfile.count === 0) {
+    db.prepare(`
+      INSERT INTO user_profile (id, name, business_name, email, phone, currency, currency_symbol, theme)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'usr_default',
+      'Esther Howard',
+      'W2L Business Commerce',
+      'esther@w2l.internal',
+      '+92 300 1234567',
+      'PKR',
+      'Rs',
+      'light'
+    );
+    console.log('👤 Seeded Default User Profile: Currency = PKR (Rs)');
+  }
+
+  // 2. Check accounts
   const existingAccounts = db.prepare('SELECT count(*) as count FROM accounts').get() as { count: number };
   if (existingAccounts.count > 0) {
-    console.log('ℹ️ Database already contains data. Skipping seed.');
     return;
   }
 
-  console.log('🌱 Seeding initial financial data, accounts, and sample transactions...');
+  console.log('🌱 Seeding initial financial data, accounts, and sample transactions in PKR...');
 
-  // 1. Chart of Accounts
   const insertAccount = db.prepare(`
     INSERT INTO accounts (id, code, name, type, currency)
     VALUES (?, ?, ?, ?, ?)
@@ -39,10 +56,10 @@ export function seedDatabase() {
   ];
 
   for (const acc of accounts) {
-    insertAccount.run(acc.id, acc.code, acc.name, acc.type, 'USD');
+    insertAccount.run(acc.id, acc.code, acc.name, acc.type, 'PKR');
   }
 
-  // 2. Parties (including the 2 Bilals for disambiguation demonstration!)
+  // Parties
   const insertParty = db.prepare(`
     INSERT INTO parties (id, name, phone, tag, current_balance, notes)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -62,7 +79,7 @@ export function seedDatabase() {
     insertParty.run(p.id, p.name, p.phone, p.tag, p.current_balance, p.notes);
   }
 
-  // 3. Invoices (Matching the user's reference image!)
+  // Invoices
   const insertInvoice = db.prepare(`
     INSERT INTO invoices (id, invoice_number, party_id, service_description, amount, status, issue_date, due_date)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -78,7 +95,7 @@ export function seedDatabase() {
     insertInvoice.run(inv.id, inv.num, inv.party, inv.service, inv.amount, inv.status, inv.issue, inv.due);
   }
 
-  // 4. Sample Transactions (producing the exact KPIs: Revenue $12,450, Expenses $7,820, Profit $4,630)
+  // Sample transactions
   const insertTx = db.prepare(`
     INSERT INTO transactions (id, date, description, source_channel, raw_input, status)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -103,23 +120,21 @@ export function seedDatabase() {
     const txDate = new Date(Date.now() - dateOffsetDays * 86400000).toISOString();
     insertTx.run(txId, txDate, desc, channel, raw, 'POSTED');
 
-    // Debit line
     insertEntry.run('entry_' + crypto.randomUUID(), txId, debitAcc, partyId || null, amount, 0.0, desc);
-    // Credit line
     insertEntry.run('entry_' + crypto.randomUUID(), txId, creditAcc, partyId || null, 0.0, amount, desc);
   }
 
-  // Revenues (Total = $12,450)
+  // Revenues (Total = 12,450)
   recordSampleTx('Branding Project Milestone 1', 'WHATSAPP_TEXT', 'Received 5450 from Pixel Studio for branding', 'acc_bank', 'acc_services', 5450, 'pty_pixel', 10);
   recordSampleTx('E-Commerce Strategy Retainer', 'WHATSAPP_VOICE', 'Client sent 4000 cash for retainer', 'acc_cash', 'acc_sales', 4000, 'pty_nova', 5);
   recordSampleTx('Design System Handover', 'WEB_MANUAL', 'Design System milestone completed', 'acc_bank', 'acc_services', 3000, 'pty_bluetech', 2);
 
-  // Expenses (Total = $7,820 matching the categories in reference image)
+  // Expenses (Total = 7,820)
   recordSampleTx('Figma and Cloud Hosting', 'WHATSAPP_IMAGE', 'Receipt image: Cloud subscriptions 2100', 'acc_software', 'acc_bank', 2100, undefined, 12);
   recordSampleTx('Google Ads Campaign', 'WHATSAPP_TEXT', 'Google ads marketing charge 1500', 'acc_marketing', 'acc_bank', 1500, 'pty_google_ads', 7);
   recordSampleTx('Backend Developer Payout', 'WHATSAPP_VOICE', 'Transferred 1400 to backend contractor Nasir', 'acc_contractors', 'acc_bank', 1400, 'pty_freelancer', 3);
   recordSampleTx('UI Freelancer Payment', 'WHATSAPP_TEXT', 'Paid 1800 to frontend freelancer', 'acc_contractors', 'acc_bank', 1800, 'pty_freelancer', 1);
   recordSampleTx('Office Stationery & Supplies', 'WHATSAPP_IMAGE', 'Receipt photo: Paper and stationery 1020', 'acc_misc', 'acc_cash', 1020, undefined, 4);
 
-  console.log('✅ Sample data seeded successfully: Total Revenue $12,450, Expenses $7,820, Net Profit $4,630');
+  console.log('✅ Sample data seeded successfully: Total Revenue 12,450, Expenses 7,820, Net Profit 4,630 in PKR');
 }
